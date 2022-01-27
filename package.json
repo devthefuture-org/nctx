@@ -1,0 +1,45 @@
+{
+  "name": "nctx",
+  "version": "1.0.0",
+  "description": "NodeJS Contextual Dependency Injection using native async_hooks - IoC",
+  "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devthejo/nctx.git"
+  },
+  "keywords": [
+    "nctx",
+    "ioc",
+    "di",
+    "dependency-injection",
+    "inversion-of-control",
+    "async_hooks"
+  ],
+  "scripts": {
+    "lint": "eslint src",
+    "lint:fix": "yarn lint --cache --fix"
+  },
+  "author": "devthejo",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/devthejo/nctx/issues"
+  },
+  "homepage": "https://github.com/devthejo/nctx#readme",
+  "devDependencies": {
+    "eslint": "^7.32.0",
+    "eslint-config-node": "^4.1.0",
+    "eslint-config-prettier": "^7",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^3.4.1",
+    "prettier": "^2.3.2"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "dependencies": {
+    "lodash.defaultsdeep": "^4.6.1",
+    "lodash.get": "^4.4.2",
+    "lodash.merge": "^4.6.2",
+    "lodash.set": "^4.3.2"
+  }
+}

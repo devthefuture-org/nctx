@@ -1,0 +1,13 @@
+extends:
+  - plugin:node/recommended
+  - prettier
+  - plugin:prettier/recommended
+
+parserOptions:
+  ecmaVersion: latest
+  sourceType: script
+  env:
+    - node: true
+
+ignorePatterns:
+  - node_modules
