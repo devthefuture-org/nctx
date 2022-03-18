@@ -34,7 +34,7 @@
     "prettier": "^2.3.2"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=14"
   },
   "dependencies": {
     "lodash.defaultsdeep": "^4.6.1",
