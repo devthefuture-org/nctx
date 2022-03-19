@@ -11,6 +11,21 @@ class Context {
     return new Context(name);
   }
 
+  static fork(func, ctxArr = []) {
+    return new Promise((resolve, reject) => {
+      setImmediate(async () => {
+        try {
+          for (const ctx of ctxArr) {
+            ctx.fork();
+          }
+          resolve(await func());
+        } catch (err) {
+          reject(err);
+        }
+      });
+    });
+  }
+
   constructor(name) {
     this.name = name;
     this.store = new Map();
