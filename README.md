@@ -15,7 +15,7 @@ or
 npm i nctx
 ```
 
-## usage
+## usage example with express
 ctx/app.js
 ```js
 const nctx = require("nctx")
@@ -78,4 +78,45 @@ router.get("/", async ()=>{
   // the reqLogger is specific to the query
 })
 
+```
+
+## fork context
+
+```js
+const nctx = require("nctx")
+
+const funcCtx1 = nctx.create()
+const func = async () => {
+  const foo = funcCtx1.require("foo")
+  return `foo=${foo}`
+}
+
+const main = async () => {
+  funcCtx1.provide()
+
+  funcCtx1.set("foo", "bar")
+
+  const result = await Promise.all([
+    
+    nctx.fork(() => {
+      funcCtx1.set("foo", "jo")
+      // here func is executed under the forked context 1
+      return func()
+    }, [funcCtx1]),
+
+    nctx.fork(() => {
+      funcCtx1.set("foo", "devthejo")
+      // here func is executed under the forked context 2
+      return func()
+    }, [funcCtx1]),
+
+    // here func is executed under original context
+    func(),
+
+  ])
+
+  console.log(result)
+}
+
+main()
 ```
