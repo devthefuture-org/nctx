@@ -28,9 +28,10 @@ const nctx = require("nctx")
 
 const reqCtx = nctx.create("req")
 
-reqCtx.createAppMiddleware = function createAppMiddleware() {
+reqCtx.createAppMiddleware = () => {
   return (req, res, next) => {
-    reqCtx.provide(req)
+    reqCtx.provide()
+    reqCtx.share(req)
     res.on("finish", () => {
       reqCtx.endShare(req)
     })
@@ -38,9 +39,9 @@ reqCtx.createAppMiddleware = function createAppMiddleware() {
     next()
   }
 }
-reqCtx.createRouterMiddleware = function createRouterMiddleware() {
+reqCtx.createRouterMiddleware = () => {
   return function (req, _res, next) {
-    reqCtx.provide(req)
+    reqCtx.share(req)
     if (next) {
       next()
     }
@@ -66,12 +67,15 @@ app.use(async (req, _res, next) => {
   next()
 })
 
+const router = express.Router()
+router.use(reqCtx.createRouterMiddleware())
+
+app.use(router)
+
 // now you can get contextual logger from anywhere you call reqCtx under async tree
-const route = async ()=>{
+router.get("/", async ()=>{
   const reqLogger = reqCtx.get("logger")
   // the reqLogger is specific to the query
-}
-
-app.use(route)
+})
 
 ```
