@@ -26,16 +26,17 @@ class Context {
     });
   }
 
-  constructor(name) {
+  constructor(name = Symbol()) {
     this.name = name;
     this.store = new Map();
     this.sharedRefStore = new Map();
+    this.fallbackCtx = null;
   }
 
   storeRequire(key) {
     if (!this.store.has(key)) {
       throw new Error(
-        `calling context "${this.name}" from unprovided env, please use provide in a parent async branch`
+        `calling context "${this.name.toString()}" from unprovided env, please use provide in a parent async branch`
       );
     }
     return this.store.get(key);
@@ -80,6 +81,10 @@ class Context {
     registry.map = new Map(parentRegistry.map);
     registry.parent = parentRegistry;
     this.store.set(asyncId, registry);
+  }
+
+  fallback(ctx) {
+    this.fallbackCtx = ctx;
   }
 
   merge(...params) {
@@ -127,7 +132,11 @@ class Context {
       return key.map((k) => this.get(k));
     }
     const registry = this.storeRequire(asyncHooks.executionAsyncId());
-    return registry.get(key);
+    const v = registry.get(key);
+    if (v === undefined && this.fallbackCtx) {
+      return this.fallbackCtx.get(key);
+    }
+    return v;
   }
 
   set(key, val) {
@@ -160,11 +169,13 @@ class Context {
 
   require(key) {
     if (Array.isArray(key)) {
-      return key.map((k) => this.required(k));
+      return key.map((k) => this.require(k));
     }
     const val = this.get(key);
     if (!val) {
-      throw new Error(`missing required context value for "${key}"`);
+      throw new Error(
+        `missing required context value for "${key}" in context "${this.name.toString()}"`
+      );
     }
     return val;
   }

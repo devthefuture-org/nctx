@@ -19,14 +19,14 @@ npm i nctx
 ctx/app.js
 ```js
 const nctx = require("nctx")
-module.exports = nctx.create("app")
+module.exports = nctx.create(Symbol("app"))
 ```
 
 ctx/req.js
 ```js
 const nctx = require("nctx")
 
-const reqCtx = nctx.create("req")
+const reqCtx = nctx.create(Symbol("req"))
 
 reqCtx.createAppMiddleware = () => {
   return (req, res, next) => {
