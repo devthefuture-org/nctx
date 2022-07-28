@@ -5,6 +5,7 @@ const merge = require("lodash.merge");
 
 const Registry = require("./registry");
 const { isObjectKey } = require("./utils");
+const { handler, requireHandler } = require("./proxy-handlers");
 
 class Context {
   static create(name) {
@@ -31,6 +32,9 @@ class Context {
     this.store = new Map();
     this.sharedRefStore = new Map();
     this.fallbackCtx = null;
+
+    this.proxy = new Proxy(this, handler);
+    this.proxyRequire = new Proxy(this, requireHandler);
   }
 
   storeRequire(key) {
@@ -128,6 +132,9 @@ class Context {
   }
 
   get(key) {
+    if (key === undefined) {
+      return this.proxy;
+    }
     if (Array.isArray(key)) {
       return key.map((k) => this.get(k));
     }
@@ -168,6 +175,9 @@ class Context {
   }
 
   require(key) {
+    if (key === undefined) {
+      return this.proxyRequire;
+    }
     if (Array.isArray(key)) {
       return key.map((k) => this.require(k));
     }
