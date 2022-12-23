@@ -17,7 +17,7 @@ class Context {
       setImmediate(async () => {
         try {
           for (const ctx of ctxArr) {
-            ctx.fork();
+            ctx.forkAsyncHookContext();
           }
           resolve(await func());
         } catch (err) {
@@ -77,7 +77,11 @@ class Context {
     }
   }
 
-  fork() {
+  fork(callback) {
+    Context.fork(callback, [this]);
+  }
+
+  forkAsyncHookContext() {
     const asyncId = asyncHooks.executionAsyncId();
     const parentRegistry = this.storeRequire(asyncId);
     const registry = Registry.create();
