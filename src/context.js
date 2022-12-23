@@ -78,7 +78,7 @@ class Context {
   }
 
   fork(callback) {
-    Context.fork(callback, [this]);
+    return Context.fork(callback, [this]);
   }
 
   forkAsyncHookContext() {
