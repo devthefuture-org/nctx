@@ -165,7 +165,9 @@ class Context {
   }
 
   replace(key, callback) {
-    this.set(key, callback(this.get(key)));
+    const value = callback(this.get(key));
+    this.set(key, value);
+    return value;
   }
 
   getParent(key) {
