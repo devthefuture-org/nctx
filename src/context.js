@@ -12,12 +12,12 @@ class Context {
     return new Context(name);
   }
 
-  static fork(func, ctxArr = []) {
+  static fork(func, ctxArr = [], deepFork = false) {
     return new Promise((resolve, reject) => {
       setImmediate(async () => {
         try {
           for (const ctx of ctxArr) {
-            ctx.forkAsyncHookContext();
+            ctx.forkAsyncHookContext(deepFork);
           }
           resolve(await func());
         } catch (err) {
@@ -77,15 +77,19 @@ class Context {
     }
   }
 
-  fork(callback) {
-    return Context.fork(callback, [this]);
+  fork(callback, deepFork = false) {
+    return Context.fork(callback, [this], deepFork);
   }
 
-  forkAsyncHookContext() {
+  forkAsyncHookContext(deepFork = false) {
     const asyncId = asyncHooks.executionAsyncId();
     const parentRegistry = this.storeRequire(asyncId);
     const registry = Registry.create();
-    defaultsDeep(registry.obj, parentRegistry.obj);
+    if (deepFork) {
+      defaultsDeep(registry.obj, parentRegistry.obj);
+    } else {
+      Object.assign(registry.obj, parentRegistry.obj);
+    }
     registry.map = new Map(parentRegistry.map);
     registry.parent = parentRegistry;
     this.store.set(asyncId, registry);
