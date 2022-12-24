@@ -1,6 +1,6 @@
 {
   "name": "nctx",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "NodeJS Contextual Dependency Injection using native async_hooks - IoC",
   "main": "src/index.js",
   "repository": {
