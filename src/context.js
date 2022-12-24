@@ -164,6 +164,10 @@ class Context {
     registry.assign(obj);
   }
 
+  replace(key, callback) {
+    this.set(key, callback(this.get(key)));
+  }
+
   getParent(key) {
     if (Array.isArray(key)) {
       return key.map((k) => this.getParent(k));
