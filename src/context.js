@@ -188,7 +188,7 @@ class Context {
     registry.parent.assign(obj);
   }
 
-  require(key) {
+  require(key, strict = true) {
     if (key === undefined) {
       return this.proxyRequire;
     }
@@ -196,7 +196,7 @@ class Context {
       return key.map((k) => this.require(k));
     }
     const val = this.get(key);
-    if (!val) {
+    if ((strict && val === undefined) || (!strict && !val)) {
       throw new Error(
         `missing required context value for "${key}" in context "${this.name.toString()}"`
       );
