@@ -168,11 +168,13 @@ class Context {
   set(key, val) {
     const registry = this.storeRequire(asyncHooks.executionAsyncId());
     registry.set(key, val);
+    return val;
   }
 
   assign(obj) {
     const registry = this.storeRequire(asyncHooks.executionAsyncId());
     registry.assign(obj);
+    return obj;
   }
 
   replace(key, callback) {
@@ -192,11 +194,13 @@ class Context {
   setParent(key, val) {
     const registry = this.storeRequire(asyncHooks.executionAsyncId());
     registry.parent.set(key, val);
+    return val;
   }
 
   assignParent(obj) {
     const registry = this.storeRequire(asyncHooks.executionAsyncId());
     registry.parent.assign(obj);
+    return obj;
   }
 
   require(key, strict = true) {
