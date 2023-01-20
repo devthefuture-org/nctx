@@ -77,6 +77,17 @@ class Context {
     }
   }
 
+  isProvided() {
+    const asyncId = asyncHooks.executionAsyncId();
+    return this.store.has(asyncId);
+  }
+
+  getDefault(key) {
+    if (this.isProvided()) {
+      return this.get(key);
+    }
+  }
+
   fork(callback, deepFork = false) {
     return Context.fork(callback, [this], deepFork);
   }
