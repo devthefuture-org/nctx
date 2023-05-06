@@ -3,8 +3,7 @@
 ## IoC (Inversion of Control)
 NodeJS Contextual Dependency Injection using native async_hooks
 
-see https://stackabuse.com/using-async-hooks-for-request-context-handling-in-node-js/
-and https://nodejs.org/api/async_hooks.html
+see https://nodejs.org/api/async_hooks.html
 
 ## installation
 ```sh
@@ -30,13 +29,14 @@ const reqCtx = nctx.create(Symbol("req"))
 
 reqCtx.createAppMiddleware = () => {
   return (req, res, next) => {
-    reqCtx.provide()
-    reqCtx.share(req)
-    res.on("finish", () => {
-      reqCtx.endShare(req)
+    reqCtx.provide(()=>{
+      reqCtx.share(req)
+      res.on("finish", () => {
+        reqCtx.endShare(req)
+      })
+      reqCtx.set("req", req)
+      next()
     })
-    reqCtx.set("req", req)
-    next()
   }
 }
 reqCtx.createRouterMiddleware = () => {
@@ -92,28 +92,31 @@ const func = async () => {
 }
 
 const main = async () => {
-  funcCtx1.provide()
+  funcCtx1.provide(()=>{
 
-  funcCtx1.set("foo", "bar")
+    funcCtx1.set("foo", "bar")
+  
+    const result = await Promise.all([
+      
+      nctx.fork([funcCtx1], () => {
+        funcCtx1.set("foo", "jo")
+        // here func is executed under the forked context 1
+        return func()
+      }),
+  
+      nctx.fork([funcCtx1], () => {
+        funcCtx1.set("foo", "devthejo")
+        // here func is executed under the forked context 2
+        return func()
+      }),
+  
+      // here func is executed under original context
+      func(),
+  
+    ])
 
-  const result = await Promise.all([
-    
-    nctx.fork(() => {
-      funcCtx1.set("foo", "jo")
-      // here func is executed under the forked context 1
-      return func()
-    }, [funcCtx1]),
+  })
 
-    nctx.fork(() => {
-      funcCtx1.set("foo", "devthejo")
-      // here func is executed under the forked context 2
-      return func()
-    }, [funcCtx1]),
-
-    // here func is executed under original context
-    func(),
-
-  ])
 
   console.log(result)
 }
