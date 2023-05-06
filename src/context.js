@@ -12,24 +12,28 @@ class Context {
     return new Context(name);
   }
 
-  static async provide(ctxArr = [], callback, ref) {
+  static async provide(ctxArr = [], callback, ref, syncFollowers = true) {
     if (!Array.isArray(ctxArr)) {
       ctxArr = [ctxArr];
     }
 
     const reducer = composeReducer(
-      ...ctxArr.map((ctx) => (func) => () => ctx.provide(func, ref))
+      ...ctxArr.map(
+        (ctx) => (func) => () => ctx.provide(func, ref, syncFollowers)
+      )
     );
 
     return reducer(callback)();
   }
 
-  static fork(ctxArr = [], callback, deepFork = false) {
+  static fork(ctxArr = [], callback, deepFork = false, syncFollowers = true) {
     if (!Array.isArray(ctxArr)) {
       ctxArr = [ctxArr];
     }
     const reducer = composeReducer(
-      ...ctxArr.map((ctx) => (func) => () => ctx.fork(func, deepFork))
+      ...ctxArr.map(
+        (ctx) => (func) => () => ctx.fork(func, deepFork, syncFollowers)
+      )
     );
     return reducer(callback)();
   }
@@ -41,6 +45,7 @@ class Context {
     this.store = new Map();
     this.sharedRefStore = new Map();
     this.fallbackCtx = null;
+    this.followedByCtx = new Set();
 
     this.proxy = new Proxy(this, handler);
     this.proxyRequire = new Proxy(this, requireHandler);
@@ -56,7 +61,15 @@ class Context {
     return store;
   }
 
-  provide(callback, ref) {
+  provide(callback, ref, syncFollowers = true) {
+    if (syncFollowers) {
+      return Context.provide(
+        [this, ...this.followedByCtx],
+        callback,
+        ref,
+        false
+      );
+    }
     const registry = Registry.create();
     return this.asyncLocalStorage.run(registry, () => {
       if (ref) {
@@ -76,7 +89,15 @@ class Context {
     }
   }
 
-  fork(func, deepFork = false) {
+  fork(callback, deepFork = false, syncFollowers = true) {
+    if (syncFollowers) {
+      return Context.fork(
+        [this, ...this.followedByCtx],
+        callback,
+        deepFork,
+        false
+      );
+    }
     const parentRegistry = this.storeRequire();
     const registry = Registry.create();
     if (deepFork) {
@@ -87,12 +108,31 @@ class Context {
     registry.map = new Map(parentRegistry.map);
     registry.parent = parentRegistry;
     return this.asyncLocalStorage.run(registry, () => {
-      return func();
+      return callback();
     });
+  }
+
+  unfollow() {
+    ctx.unfollowedBy(this);
+    return this;
+  }
+  follow() {
+    ctx.followedBy(this);
+    return this;
+  }
+
+  followedBy(ctx) {
+    this.followedByCtx.add(ctx);
+    return this;
+  }
+  unfollowedBy(ctx) {
+    this.followedByCtx.delete(ctx);
+    return this;
   }
 
   fallback(ctx) {
     this.fallbackCtx = ctx;
+    return this;
   }
 
   merge(...params) {
@@ -125,10 +165,12 @@ class Context {
       const ctx = this.storeRequire();
       ctx.replaceBy(sharedCtx);
     }
+    return this;
   }
 
   endShare(ref) {
     this.sharedRefStore.delete(ref);
+    return this;
   }
 
   get(key) {
