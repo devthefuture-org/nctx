@@ -17,7 +17,9 @@
   ],
   "scripts": {
     "lint": "eslint src",
-    "lint:fix": "yarn lint --cache --fix"
+    "lint:fix": "yarn lint --cache --fix",
+    "test": "node --test",
+    "dev": "node --test --watch ."
   },
   "author": "devthejo",
   "license": "MIT",
@@ -34,12 +36,9 @@
     "prettier": "^2.3.2"
   },
   "engines": {
-    "node": ">=14"
+    "node": ">=16"
   },
   "dependencies": {
-    "lodash.defaultsdeep": "^4.6.1",
-    "lodash.get": "^4.4.2",
-    "lodash.merge": "^4.6.2",
-    "lodash.set": "^4.3.2"
+    "lodash": "^4.17.21"
   }
 }

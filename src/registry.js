@@ -1,5 +1,5 @@
-const get = require("lodash.get");
-const set = require("lodash.set");
+const get = require("lodash/get");
+const set = require("lodash/set");
 
 const { isObjectKey } = require("./utils");
 

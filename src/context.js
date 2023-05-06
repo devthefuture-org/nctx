@@ -1,7 +1,7 @@
 const asyncHooks = require("async_hooks");
 
-const defaultsDeep = require("lodash.defaultsdeep");
-const merge = require("lodash.merge");
+const defaultsDeep = require("lodash/defaultsDeep");
+const merge = require("lodash/merge");
 
 const Registry = require("./registry");
 const { isObjectKey } = require("./utils");
