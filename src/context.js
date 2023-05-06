@@ -29,9 +29,7 @@ class Context {
       ctxArr = [ctxArr];
     }
     const reducer = composeReducer(
-      ...ctxArr.map(
-        (ctx) => (func) => () => ctx.forkAsyncHookContext(func, deepFork)
-      )
+      ...ctxArr.map((ctx) => (func) => () => ctx.fork(func, deepFork))
     );
     return reducer(callback)();
   }
@@ -78,11 +76,7 @@ class Context {
     }
   }
 
-  fork(callback, deepFork = false) {
-    return Context.fork([this], callback, deepFork);
-  }
-
-  forkAsyncHookContext(func, deepFork = false) {
+  fork(func, deepFork = false) {
     const parentRegistry = this.storeRequire();
     const registry = Registry.create();
     if (deepFork) {
