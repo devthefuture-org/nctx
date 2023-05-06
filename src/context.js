@@ -1,10 +1,10 @@
-const asyncHooks = require("async_hooks");
+const { AsyncLocalStorage } = require("node:async_hooks");
 
 const defaultsDeep = require("lodash/defaultsDeep");
 const merge = require("lodash/merge");
 
 const Registry = require("./registry");
-const { isObjectKey } = require("./utils");
+const { isObjectKey, composeReducer } = require("./utils");
 const { handler, requireHandler } = require("./proxy-handlers");
 
 class Context {
@@ -12,22 +12,33 @@ class Context {
     return new Context(name);
   }
 
-  static fork(func, ctxArr = [], deepFork = false) {
-    return new Promise((resolve, reject) => {
-      setImmediate(async () => {
-        try {
-          for (const ctx of ctxArr) {
-            ctx.forkAsyncHookContext(deepFork);
-          }
-          resolve(await func());
-        } catch (err) {
-          reject(err);
-        }
-      });
-    });
+  static async provide(ctxArr = [], callback, ref) {
+    if (!Array.isArray(ctxArr)) {
+      ctxArr = [ctxArr];
+    }
+
+    const reducer = composeReducer(
+      ...ctxArr.map((ctx) => (func) => () => ctx.provide(func, ref))
+    );
+
+    return reducer(callback)();
+  }
+
+  static fork(ctxArr = [], callback, deepFork = false) {
+    if (!Array.isArray(ctxArr)) {
+      ctxArr = [ctxArr];
+    }
+    const reducer = composeReducer(
+      ...ctxArr.map(
+        (ctx) => (func) => () => ctx.forkAsyncHookContext(func, deepFork)
+      )
+    );
+    return reducer(callback)();
   }
 
   constructor(name = Symbol()) {
+    this.asyncLocalStorage = new AsyncLocalStorage();
+
     this.name = name;
     this.store = new Map();
     this.sharedRefStore = new Map();
@@ -37,49 +48,28 @@ class Context {
     this.proxyRequire = new Proxy(this, requireHandler);
   }
 
-  storeRequire(key) {
-    if (!this.store.has(key)) {
+  storeRequire() {
+    const store = this.asyncLocalStorage.getStore();
+    if (!store) {
       throw new Error(
         `calling context "${this.name.toString()}" from unprovided env, please use provide in a parent async branch`
       );
     }
-    return this.store.get(key);
+    return store;
   }
 
-  provide(ref) {
-    const currentAsyncId = asyncHooks.executionAsyncId();
-    const { store } = this;
-
-    if (store.has(currentAsyncId)) {
-      return;
-    }
-
-    const asyncHook = asyncHooks.createHook({
-      init: (newAsyncId, _, parentAsyncId) => {
-        if (store.has(parentAsyncId)) {
-          store.set(newAsyncId, store.get(parentAsyncId));
-        }
-      },
-      destroy: (asyncId) => {
-        if (store.has(asyncId)) {
-          store.delete(asyncId);
-        }
-      },
-    });
-
+  provide(callback, ref) {
     const registry = Registry.create();
-    store.set(currentAsyncId, registry);
-
-    asyncHook.enable();
-
-    if (ref) {
-      this.share(ref);
-    }
+    return this.asyncLocalStorage.run(registry, () => {
+      if (ref) {
+        this.share(ref);
+      }
+      return callback();
+    });
   }
 
   isProvided() {
-    const asyncId = asyncHooks.executionAsyncId();
-    return this.store.has(asyncId);
+    return !!this.asyncLocalStorage.getStore();
   }
 
   getDefault(key) {
@@ -92,9 +82,8 @@ class Context {
     return Context.fork(callback, [this], deepFork);
   }
 
-  forkAsyncHookContext(deepFork = false) {
-    const asyncId = asyncHooks.executionAsyncId();
-    const parentRegistry = this.storeRequire(asyncId);
+  forkAsyncHookContext(func, deepFork = false) {
+    const parentRegistry = this.storeRequire();
     const registry = Registry.create();
     if (deepFork) {
       defaultsDeep(registry.obj, parentRegistry.obj);
@@ -103,7 +92,9 @@ class Context {
     }
     registry.map = new Map(parentRegistry.map);
     registry.parent = parentRegistry;
-    this.store.set(asyncId, registry);
+    return this.asyncLocalStorage.run(registry, () => {
+      return func();
+    });
   }
 
   fallback(ctx) {
@@ -111,8 +102,7 @@ class Context {
   }
 
   merge(...params) {
-    const asyncId = asyncHooks.executionAsyncId();
-    const registry = this.storeRequire(asyncId);
+    const registry = this.storeRequire();
     const { obj, map } = registry;
     for (const [key, val] of Object.entries(params)) {
       if (isObjectKey(key)) {
@@ -133,16 +123,13 @@ class Context {
   }
 
   share(ref) {
-    const newAsyncId = asyncHooks.executionAsyncId();
     if (!this.sharedRefStore.has(ref)) {
-      const sharedCtx = this.store.get(newAsyncId);
-      this.sharedRefStore.set(ref, newAsyncId);
-      this.store.set(newAsyncId, sharedCtx);
+      const sharedCtx = this.storeRequire();
+      this.sharedRefStore.set(ref, sharedCtx);
     } else {
-      const sharedAsyncId = this.sharedRefStore.get(ref);
-      if (sharedAsyncId !== newAsyncId) {
-        this.store.set(newAsyncId, this.store.get(sharedAsyncId));
-      }
+      const sharedCtx = this.sharedRefStore.get(ref);
+      const ctx = this.storeRequire();
+      ctx.replaceBy(sharedCtx);
     }
   }
 
@@ -157,7 +144,7 @@ class Context {
     if (Array.isArray(key)) {
       return key.map((k) => this.get(k));
     }
-    const registry = this.storeRequire(asyncHooks.executionAsyncId());
+    const registry = this.storeRequire();
     const v = registry.get(key);
     if (v === undefined && this.fallbackCtx) {
       return this.fallbackCtx.get(key);
@@ -166,13 +153,13 @@ class Context {
   }
 
   set(key, val) {
-    const registry = this.storeRequire(asyncHooks.executionAsyncId());
+    const registry = this.storeRequire();
     registry.set(key, val);
     return val;
   }
 
   assign(obj) {
-    const registry = this.storeRequire(asyncHooks.executionAsyncId());
+    const registry = this.storeRequire();
     registry.assign(obj);
     return obj;
   }
@@ -187,18 +174,18 @@ class Context {
     if (Array.isArray(key)) {
       return key.map((k) => this.getParent(k));
     }
-    const registry = this.storeRequire(asyncHooks.executionAsyncId());
+    const registry = this.storeRequire();
     return registry.parent.get(key);
   }
 
   setParent(key, val) {
-    const registry = this.storeRequire(asyncHooks.executionAsyncId());
+    const registry = this.storeRequire();
     registry.parent.set(key, val);
     return val;
   }
 
   assignParent(obj) {
-    const registry = this.storeRequire(asyncHooks.executionAsyncId());
+    const registry = this.storeRequire();
     registry.parent.assign(obj);
     return obj;
   }

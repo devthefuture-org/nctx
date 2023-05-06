@@ -37,6 +37,12 @@ class Registry {
       this.set(k, v);
     }
   }
+
+  replaceBy(registry) {
+    this.obj = registry.obj;
+    this.map = registry.map;
+    this.parent = registry.parent;
+  }
 }
 
 module.exports = Registry;

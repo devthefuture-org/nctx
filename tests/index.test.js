@@ -1,7 +1,7 @@
 const assert = require("node:assert");
 
 // eslint-disable-next-line node/no-missing-require
-const { describe, it } = require("node:test");
+const { describe, test } = require("node:test");
 
 const nctx = require("../");
 
@@ -12,41 +12,38 @@ describe("fork", () => {
     return `foo=${foo}`;
   };
 
-  funcCtx1.provide();
-  funcCtx1.set("hello", "world");
+  test("fork without overlap", async () => {
+    await funcCtx1.provide(async () => {
+      funcCtx1.set("hello", "world");
+      funcCtx1.set("foo", "bar");
+      const result = await Promise.all([
+        nctx.fork([funcCtx1], () => {
+          funcCtx1.set("foo", "jo");
+          return func();
+        }),
+        func(),
+      ]);
 
-  funcCtx1.set("foo", "bar");
-
-  it("should fork without override", async () => {
-    const result = await Promise.all([
-      nctx.fork(() => {
-        funcCtx1.set("foo", "jo");
-        return func();
-      }, [funcCtx1]),
-      func(),
-    ]);
-
-    const [a, b] = result;
-    assert.strictEqual(a, "foo=jo");
-    assert.strictEqual(b, "foo=bar");
+      const [a, b] = result;
+      assert.strictEqual(a, "foo=jo");
+      assert.strictEqual(b, "foo=bar");
+    });
   });
 });
 
 describe("fallback", () => {
   const root = nctx.create(Symbol("root"));
   const ctx1 = nctx.create(Symbol("ctx1"));
+  test("fallback without overlap", async () => {
+    ctx1.fallback(root);
+    await nctx.provide([root, ctx1], async () => {
+      root.set("foo", "bar");
+      assert.strictEqual(ctx1.get("foo"), "bar");
 
-  root.provide();
-  ctx1.provide();
-  ctx1.fallback(root);
+      ctx1.set("foo", "baz");
+      assert.strictEqual(ctx1.get("foo"), "baz");
 
-  it("should fallback without override", () => {
-    root.set("foo", "bar");
-    assert.strictEqual(ctx1.get("foo"), "bar");
-
-    ctx1.set("foo", "baz");
-    assert.strictEqual(ctx1.get("foo"), "baz");
-
-    assert.strictEqual(root.get("foo"), "bar");
+      assert.strictEqual(root.get("foo"), "bar");
+    });
   });
 });
