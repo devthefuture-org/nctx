@@ -112,11 +112,11 @@ class Context {
     });
   }
 
-  unfollow() {
+  unfollow(ctx) {
     ctx.unfollowedBy(this);
     return this;
   }
-  follow() {
+  follow(ctx) {
     ctx.followedBy(this);
     return this;
   }
