@@ -79,7 +79,7 @@ class Context {
   }
 
   fork(callback, deepFork = false) {
-    return Context.fork(callback, [this], deepFork);
+    return Context.fork([this], callback, deepFork);
   }
 
   forkAsyncHookContext(func, deepFork = false) {
