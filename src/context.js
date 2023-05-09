@@ -12,14 +12,21 @@ class Context {
     return new Context(name);
   }
 
-  static async provide(ctxArr = [], callback, ref, syncFollowers = true) {
+  static async provide(
+    ctxArr = [],
+    callback,
+    ref,
+    syncFollowers = true,
+    forceOverride = false
+  ) {
     if (!Array.isArray(ctxArr)) {
       ctxArr = [ctxArr];
     }
 
     const reducer = composeReducer(
       ...ctxArr.map(
-        (ctx) => (func) => () => ctx.provide(func, ref, syncFollowers)
+        (ctx) => (func) => () =>
+          ctx.provide(func, ref, syncFollowers, forceOverride)
       )
     );
 
@@ -61,14 +68,21 @@ class Context {
     return store;
   }
 
-  provide(callback, ref, syncFollowers = true) {
+  provide(callback, ref, syncFollowers = true, forceOverride = false) {
     if (syncFollowers) {
       return Context.provide(
         [this, ...this.followedByCtx],
         callback,
         ref,
-        false
+        false,
+        forceOverride
       );
+    }
+    if (this.isProvided() && !forceOverride) {
+      if (ref) {
+        this.share(ref);
+      }
+      return callback();
     }
     const registry = Registry.create();
     return this.asyncLocalStorage.run(registry, () => {
