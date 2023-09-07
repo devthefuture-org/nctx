@@ -126,3 +126,16 @@ main()
 
 ## related libs
 - [node-simple-context](https://github.com/maxgfr/node-simple-context) by [@maxgfr](https://github.com/maxgfr)
+
+
+## Contributing:
+
+We welcome contributions! If you encounter a bug or have a feature suggestion, please open an issue. To contribute code, simply fork the repository and submit a pull request.
+
+This repository is mirrored on both GitHub and Codeberg. Contributions can be made on either platform, as the repositories are synchronized bidirectionally. 
+- Codeberg: [https://codeberg.org/nctx/foundernetes](https://codeberg.org/nctx/foundernetes)
+- GitHub: [https://github.com/nctx-org/foundernetes](https://github.com/nctx-org/foundernetes)
+
+For more information:
+- [Why mirror to Codeberg?](https://codeberg.org/Recommendations/Mirror_to_Codeberg#why-should-we-mirror-to-codeberg)
+- [GitHub to Codeberg mirroring tutorial](https://codeberg.org/Recommendations/Mirror_to_Codeberg#github-codeberg-mirroring-tutorial)
