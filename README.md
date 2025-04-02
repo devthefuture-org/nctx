@@ -14,6 +14,31 @@ or
 npm i nctx
 ```
 
+## TypeScript Support
+
+This package includes TypeScript type definitions. No additional installation is needed.
+
+```typescript
+import nctx from 'nctx';
+
+const myContext = nctx.create(Symbol('myContext'));
+```
+
+### Running the Examples
+
+The package includes examples for both CommonJS and TypeScript usage:
+
+```sh
+# Run the CommonJS example
+npm run example:js
+
+# Run the TypeScript example (requires ts-node)
+npm run example:ts
+
+# Check TypeScript types (verify that the types compile correctly)
+npm run check-types
+```
+
 ## usage example with express
 ctx/app.js
 ```js

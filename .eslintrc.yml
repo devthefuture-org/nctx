@@ -11,3 +11,5 @@ parserOptions:
 
 ignorePatterns:
   - node_modules
+  - types/**/*.d.ts
+  - examples/**/*.ts
