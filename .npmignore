@@ -2,3 +2,8 @@ yarn.lock
 .eslintrc.yml
 .gitignore
 tests
+.github
+examples
+.nvmrc
+.yarnrc.yml
+.yarn
